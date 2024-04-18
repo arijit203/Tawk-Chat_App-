@@ -8,7 +8,9 @@ import conversationReducer from "./slices/conversation";
 const rootPersistConfig={
     key:'root',
     storage,
-    keyPrefix:'redux-'
+    keyPrefix:'redux-',
+    // blacklist: ['redux-root'],
+    // serialize: false, 
 }
 
 const rootReducer=combineReducers(

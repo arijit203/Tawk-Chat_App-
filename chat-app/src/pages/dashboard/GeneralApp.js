@@ -8,13 +8,16 @@ import Contact from "../../components/Contact";
 import { useSelector } from "react-redux";
 
 import NoChatSvg from "../../assets/Illustration/NoChat"
+import ChatComponent from "./Conversation";
+import { useSearchParams } from "react-router-dom";
 
 //Dynamic loading
 const Cat = lazy(() => import("../../components/Cat"));
 
 const GeneralApp = () => {
+  const [searchParams] = useSearchParams();
   const theme = useTheme();
-  const { sidebar, chat_type, room_id } = useSelector((store) => store.app);
+  const { sidebar, chat_type, room_id } = useSelector((state) => state.app);
 
   return (
     <>
@@ -30,10 +33,15 @@ const GeneralApp = () => {
               theme.palette.mode === "light"
                 ? "#FFF"
                 : theme.palette.background.paper,
+          borderBottom:
+          searchParams.get("type") === "individual-chat" &&
+          searchParams.get("id")
+            ? "0px"
+            : "6px solid #0162C4",
         }}
       >
         {room_id !== null && chat_type === "individual" ? (
-          <Conversation />
+          <ChatComponent />
         ) : (
           <Stack
             spacing={2}

@@ -62,9 +62,9 @@ const slice = createSlice({
     updateFriendRequests(state, action) {
       state.friendRequests = action.payload.requests;
     },
-    selectConversation(state,action){
-      state.chat_type="individual";
-      state.room_id=action.payload.room_id
+    selectConversation(state, action) {
+      state.chat_type = "individual";
+      state.room_id = action.payload.room_id;
     }
   },
 });

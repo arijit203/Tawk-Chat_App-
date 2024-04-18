@@ -1,6 +1,8 @@
 import {createSlice} from "@reduxjs/toolkit";
 import axios from "../../utils/axios";
 import { showSnackbar } from "./app";
+// import { clearLocalStorage } from "../store";
+// import { clearLocalStorage } from "../store";
 
 const initialState = {
     isLoading:false,
@@ -17,9 +19,11 @@ const initialState = {
         state.isLoggedIn = action.payload.isLoggedIn;
         state.token = action.payload.token;
       },
+     
       signOut(state, action) {
         state.isLoggedIn = false;
         state.token = "";
+        state.user_id = null;
       },
       updateRegisterEmail(state, action) {
         state.email = action.payload.email;
@@ -38,6 +42,7 @@ export default slice.reducer;
 
 export function LoginUser(formValues){  //thunk-function
     return async(dispatch,getState)=>{
+      window.localStorage.clear();
         await axios.post("/auth/login",{
             ...formValues,
         },{
@@ -64,13 +69,34 @@ export function LoginUser(formValues){  //thunk-function
 
 }
 
+// export function LogoutUser() {
+//   return async (dispatch, getState) => {
+//     // console.log("User_id removed",window.localStorage.getItem("redux-root"))
+//       window.localStorage.clear();
+//       //  dispatch(clearLocalStorage());
+//       // If there are specific keys you want to remove individually, do it here
+//       window.localStorage.removeItem('redux-root');
+//     window.sessionStorage.clear();
+    
+    
+//     dispatch(slice.actions.signOut());
+    
+//   };
+// }
+
 export function LogoutUser() {
   return async (dispatch, getState) => {
-    window.localStorage.removeItem("user_id");
-    dispatch(slice.actions.signOut());
+    // Clear localStorage
+    // clearLocalStorage();
+    window.localStorage.clear();
+    // Optionally, clear sessionStorage
+    window.sessionStorage.clear();
     
+    // Dispatch an action to update the Redux store to reflect the user being logged out
+    dispatch(slice.actions.signOut());
   };
 }
+
 
 
 export function ForgotPassword(formValues) {

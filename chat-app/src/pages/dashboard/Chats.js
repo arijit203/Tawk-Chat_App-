@@ -44,18 +44,18 @@ function Chats() {
   const handleOpenDialog = () => {
     setOpenDialog(true);
   };
-
+  const { room_id } = useSelector((state) => state.app);
   const {conversations}=useSelector((state)=>state.conversation.direct_chat)
-  console.log("Convo:" ,conversations)
+  // console.log("Convo:" ,conversations)
 
   useEffect(() => {
     socket.emit("get_direct_conversations", { user_id }, (data) => {
-      console.log(data); // this data is the list of conversations
+      // console.log("Data Fetched",data); // this data is the list of conversations
       // dispatch action
 
       dispatch(fetchDirectConversations({ conversations: data }));
     });
-  }, []);
+  }, [room_id]);
   const dispatch = useDispatch();
   return (
     <>

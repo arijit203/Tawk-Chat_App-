@@ -7,6 +7,7 @@ import { Profile_Menu } from "../../data";
 import { useDispatch, useSelector } from "react-redux";
 import { LogoutUser } from "../../redux/slices/auth";
 import { useNavigate } from "react-router-dom";
+import { socket } from "../../socket";
 
 
 const ProfileMenu = () => {
@@ -23,6 +24,7 @@ const ProfileMenu = () => {
   };
 
   const user_id = window.localStorage.getItem("user_id");
+  console.log("User_id in Profile:",user_id)
 
   const user_name = user?.firstName;
 
@@ -70,7 +72,7 @@ const ProfileMenu = () => {
                     }
                     else {
                       dispatch(LogoutUser());
-                      
+                      socket.emit("end", {user_id});
                     }
                   }}
                   sx={{ width: 100 }}

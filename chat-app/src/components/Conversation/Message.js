@@ -12,9 +12,7 @@ function Message() {
       <Stack spacing={3}>
         {Chat_History.map((el) => {
           console.log(el.type);
-          if(el.type==='divider'){
-            <Timeline  el={el} />
-          }
+         
           switch (el.type) {
             case 'divider':
                 // console.log(el.type,"******");

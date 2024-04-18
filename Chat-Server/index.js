@@ -47,7 +47,7 @@ io.on("connection", async (socket) => {
 
   const socket_id = socket.id;
 
-  // console.log("user connected",socket_id)
+  console.log("user connected",socket_id)
 
   if (user_id) {
     await User.findByIdAndUpdate(user_id, { socket_id, status: "Online" });
@@ -160,77 +160,89 @@ io.on("connection", async (socket) => {
 
 
   socket.on("get_messages", async (data, callback) => {
-    const { messages } = await OneToOneMessage.findById(
-      data.conversation_id
-    ).select("messages");
-    console.log("messages:" ,messages)
-    callback(messages);
-  });
-  //Handle text/Link message
-  socket.on("text_message", async(data) => {
-    console.log("Received Message", data);
-
-    //data:{to,from,message,conversation_id,type}
-
-    const {to,from,message,conversation_id,type}=data;
-
-    const to_user=await User.findById(to);
-    const from_user=await User.findById(from);
-
-
-    const new_message={
-        to,
-        from,
-        type,
-        text:message,
-        created_at:Date.now()
+    try {
+      const { messages } = await OneToOneMessage.findById(data.conversation_id).select("messages");
+      if (typeof callback === 'function') {
+        callback(messages);
+      } else {
+        console.error("Callback is not a function");
+      }
+    } catch (error) {
+      console.error(error);
+      // You might want to handle the error differently, e.g., send an error message via callback
+      if (typeof callback === 'function') {
+        callback({ error: "An error occurred while fetching messages" });
+      }
     }
+  });
+  
+  //Handle text/Link message
+  // Handle incoming text/link messages
+  socket.on("text_message", async (data) => {
+    console.log("Received message:", data);
 
+    // data: {to, from, text}
 
+    const { message, conversation_id, from, to, type } = data;
 
-    //create a new conversation if it doesn't exist or add new messages to existing list
-    const chat=await OneToOneMessage.findById(conversation_id);
+    const to_user = await User.findById(to);
+    const from_user = await User.findById(from);
+
+    // message => {to, from, type, created_at, text, file}
+
+    const new_message = {
+      to: to,
+      from: from,
+      type: type,
+      created_at: Date.now(),
+      text: message,
+    };
+
+    // fetch OneToOneMessage Doc & push a new message to existing conversation
+    const chat = await OneToOneMessage.findById(conversation_id);
     chat.messages.push(new_message);
-    await chat.save({ new: true, validateModifiedOnly: true });   //save to db
+    // save to db`
+    await chat.save({ new: true, validateModifiedOnly: true });
 
-    
+    // emit incoming_message -> to user
 
-    //emit incoming_message -> to user
-    io.to(to_user.socket_id).emit("new_message",{
-        conversation_id,
-        message:new_message
-    })
+    io.to(to_user?.socket_id).emit("new_message", {
+      conversation_id,
+      message: new_message,
+    });
 
-
-    //emit outgoing_message -> from user
-    io.to(from_user.socket_id).emit("new_message",{
-        conversation_id,
-        message:new_message
-    })
-
+    // emit outgoing_message -> from user
+    io.to(from_user?.socket_id).emit("new_message", {
+      conversation_id,
+      message: new_message,
+    });
   });
 
+  // handle Media/Document Message
   socket.on("file_message", (data) => {
-    console.log("Received Message", data);
+    console.log("Received message:", data);
 
-    //data:{to,from,text,file}
+    // data: {to, from, text, file}
 
-    //get the file extension
-
+    // Get the file extension
     const fileExtension = path.extname(data.file.name);
 
-    //generate a unique file name
-
-    const fileName = `${Date.now()}_${Math.floor(
+    // Generate a unique filename
+    const filename = `${Date.now()}_${Math.floor(
       Math.random() * 10000
     )}${fileExtension}`;
 
-    //Upload the file to db
+    // upload file to AWS s3
 
-    //emit incoming_message -> to user
+    // create a new conversation if its dosent exists yet or add a new message to existing conversation
 
-    //emit outgoing_message -> from user
+    // save to db
+
+    // emit incoming_message -> to user
+
+    // emit outgoing_message -> from user
   });
+
 
   socket.on("end", async function (data) {
     //Find user by _id and set the status to offline
@@ -240,5 +252,13 @@ io.on("connection", async (socket) => {
     }
     console.log("Closing Socket connection");
     socket.disconnect(0);
+  });
+});
+
+process.on("unhandledRejection", (err) => {
+  console.log(err);
+  console.log("UNHANDLED REJECTION! Shutting down ...");
+  server.close(() => {
+    process.exit(1); //  Exit Code 1 indicates that a container shut down, either because of an application failure.
   });
 });

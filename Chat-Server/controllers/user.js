@@ -2,6 +2,13 @@ const FriendRequest = require("../models/friendRequest");
 const User = require("../models/user");
 const filterObj = require("../utils/filterObject");
 
+exports.getMe = async (req, res, next) => {
+  res.status(200).json({
+    status: "success",
+    data: req.user,
+  });
+};
+
 exports.updateMe = async (req, res, next) => {
   const { user } = req;
   console.log(req.body);

@@ -15,7 +15,7 @@ import SideBar from "./SideBar";
 import { useDispatch, useSelector } from "react-redux";
 import { connectSocket, socket } from "../../socket";
 import { SelectConversation,  showSnackbar } from "../../redux/slices/app";
-import { AddDirectConversation, UpdateDirectConversation } from "../../redux/slices/conversation";
+import { AddDirectConversation, AddDirectMessage, UpdateDirectConversation } from "../../redux/slices/conversation";
 
 
 
@@ -23,7 +23,7 @@ import { AddDirectConversation, UpdateDirectConversation } from "../../redux/sli
 const DashboardLayout = () => {
   const dispatch=useDispatch();
   const {isLoggedIn}=useSelector((state)=>state.auth);
-  const {conversations}=useSelector((state)=>state.conversation.direct_chat)
+  const {conversations,current_conversation}=useSelector((state)=>state.conversation.direct_chat)
 
   const user_id=window.localStorage.getItem( "user_id");
 
@@ -68,16 +68,19 @@ const DashboardLayout = () => {
 
   useEffect(() => {
     if (isLoggedIn) {
-      // window.onload = function () {
-      //   if (!window.location.hash) {
-      //     window.location = window.location + "#loaded";
-      //     window.location.reload();
-      //   }
-      // };
+      window.onload = function () {
+        if (!window.location.hash) {
+          window.location.hash = "#loaded";
+          window.location.reload();
+        }
+        // window.location.reload();
 
-      // window.onload();
+      };
+
+      window.onload();
 
       if (!socket) {
+        console.log("Socket to be connected")
         connectSocket(user_id);
       }
 
@@ -102,6 +105,25 @@ const DashboardLayout = () => {
       socket.on("request_sent", (data) => {
         dispatch(showSnackbar({ severity: "success", message: data.message }));
       });
+
+      socket.on("new_message", (data) => {
+        const message = data.message;
+        console.log("*****************")
+        // check if msg we got is from currently selected conversation
+        if (current_conversation?.id === data.conversation_id) {
+          dispatch(
+            AddDirectMessage({
+              id: message._id,
+              type: "msg",
+              subtype: message.type,
+              message: message.text,
+              incoming: message.to === user_id,
+              outgoing: message.from === user_id,
+            })
+          );
+        }
+      });
+
 
       socket.on("start_chat",(data)=>{
           
@@ -135,6 +157,7 @@ const DashboardLayout = () => {
       socket?.off("request_accepted");
       socket?.off("request_sent");
       socket?.off("start_chat");
+      socket?.off("new_message");
       
     };
   }, [isLoggedIn, socket]);
